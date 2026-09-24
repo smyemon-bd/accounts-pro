@@ -1,0 +1,6 @@
+streamlit
+pandas
+supabase
+streamlit-lottie
+openpyxl
+reportlab
