@@ -469,8 +469,8 @@ def render_main_app():
                             payload = {"invoice_id": inv_id, "date": str(pay_date), "customer": selected_customer, "service": "Due Collection", "amount": 0.0, "received": float(pay_amount), "due": float(-pay_amount)}
                             if sync_row_to_supabase("sales", payload):
                                 st.success("Recovery Committed.")
-                                        st.rerun()
-                                        st.dataframe(st.session_state.sales, use_container_width=True, hide_index=True)
+                                st.rerun()
+                                st.dataframe(st.session_state.sales, use_container_width=True, hide_index=True)
         
     elif menu == "Invoice Generator":
         page_header("Invoice Engine")
