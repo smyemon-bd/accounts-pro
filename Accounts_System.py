@@ -40,7 +40,7 @@ loading_animation = load_lottie_url(LOTTIE_LOADING_URL)
 error_animation = load_lottie_url(LOTTIE_ERROR_URL)
 
 SUPABASE_URL = "https://bfmuxznusdblznvepumi.supabase.co"
-SUPABASE_KEY = "sb_secret_i8_Dcr3EZrZNi736dpYhYQ_0FF7DLAk"
+SUPABASE_KEY = "sb_secret_EpoVYmvPa6VK3IOzeYRnwQ_OZx3-dVQ"
 
 db_connected = True
 
