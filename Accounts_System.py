@@ -470,7 +470,7 @@ def render_main_app():
                             if sync_row_to_supabase("sales", payload):
                                 st.success("Recovery Committed.")
                                         st.rerun()
-        st.dataframe(st.session_state.sales, use_container_width=True, hide_index=True)
+                                        st.dataframe(st.session_state.sales, use_container_width=True, hide_index=True)
         
     elif menu == "Invoice Generator":
         page_header("Invoice Engine")
