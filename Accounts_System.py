@@ -39,8 +39,12 @@ def load_lottie_url(url: str):
 loading_animation = load_lottie_url(LOTTIE_LOADING_URL)
 error_animation = load_lottie_url(LOTTIE_ERROR_URL)
 
-SUPABASE_URL = "https://bfmuxznusdblznvepumi.supabase.co"
-SUPABASE_KEY = "sb_secret_EpoVYmvPa6VK3IOzeYRnwQ_OZx3-dVQ"
+url = st.secrets["SUPABASE_URL"]
+key = st.secrets["SUPABASE_KEY"]
+
+
+#SUPABASE_URL = "https://bfmuxznusdblznvepumi.supabase.co"
+#SUPABASE_KEY = "sb_secret_EpoVYmvPa6VK3IOzeYRnwQ_OZx3-dVQ"
 
 db_connected = True
 
