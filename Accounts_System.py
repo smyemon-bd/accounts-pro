@@ -56,14 +56,40 @@ db_connected = True
 supabase = None
 
 try:
+    SUPABASE_URL = st.secrets["SUPABASE_URL"]
+    SUPABASE_KEY = st.secrets["SUPABASE_KEY"]
+except Exception:
+    # ফলব্যাক: সিক্রেটস না থাকলে সরাসরি ইনপুট নেবে
+    SUPABASE_URL = "https://supabase.co"
+    SUPABASE_KEY = "sb_secret_nifKxM-ygaEaw7Tw5lY02w_X7BvyOd7"
+
+db_connected = True
+supabase = None
+
+try:
     if SUPABASE_URL and SUPABASE_KEY:
         supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
-        # কানেকশন টেস্ট করার জন্য একটি ডামি কুয়েরি
-        supabase.table("users").select("username").limit(1).execute()
+        
+        # টেবিল চেক না করে শুধু API এন্ডপয়েন্ট সচল কি না তা পরীক্ষা করা হচ্ছে
+        headers = {"apikey": SUPABASE_KEY, "Authorization": f"Bearer {SUPABASE_KEY}"}
+        response = requests.get(f"{SUPABASE_URL}/rest/v1/", headers=headers, timeout=5)
+        if response.status_code not in:
+            db_connected = False
     else:
         db_connected = False
 except Exception as e:
     db_connected = False
+
+
+#try:
+    #if SUPABASE_URL and SUPABASE_KEY:
+        #supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+        # কানেকশন টেস্ট করার জন্য একটি ডামি কুয়েরি
+        #supabase.table("users").select("username").limit(1).execute()        
+    #else:
+        #db_connected = False
+#except Exception as e:
+    #db_connected = False
 
 APP_NAME = "Accounts Pro"
 APP_SUBTITLE = "Finance Management System"
@@ -200,17 +226,33 @@ def load_data():
             res_sales = supabase.table("sales").select("*").execute()
             if res_sales.data:
                 df = pd.DataFrame(res_sales.data)
+                # প্রজেক্টের রিকোয়ারমেন্ট অনুযায়ী সুনির্দিষ্ট ম্যাপিং করা হয়েছে
                 rename_map = {
-                    "invoice_id": "Invoice_ID",
-                    "date": "Date",
-                    "customer": "Customer",
-                    "service": "Service",
-                    "amount": "Amount",
-                    "received": "Received",
-                    "due": "Due"
-                }
-                df.rename(columns=rename_map, inplace=True)
-                st.session_state.sales = df
+                "invoice_id": "Invoice_ID",
+                "date": "Date",
+                "customer": "Customer",
+                "service": "Service",
+                "amount": "Amount",
+                "received": "Received",
+                "due": "Due"
+    }
+    # df.rename(columns=rename_map, inplace=True)
+    # st.session_state.sales = df
+
+            # res_sales = supabase.table("sales").select("*").execute()
+            # if res_sales.data:
+                # df = pd.DataFrame(res_sales.data)
+                # rename_map = {
+                    # "invoice_id": "Invoice_ID",
+                    # "date": "Date",
+                    # "customer": "Customer",
+                    # "service": "Service",
+                    # "amount": "Amount",
+                    # "received": "Received",
+                    # "due": "Due"
+                # }
+                # df.rename(columns=rename_map, inplace=True)
+                # st.session_state.sales = df
             else:
                 st.session_state.sales = pd.DataFrame(columns=["Invoice_ID", "Date", "Customer", "Service", "Amount", "Received", "Due"])
 
