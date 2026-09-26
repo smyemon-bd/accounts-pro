@@ -39,18 +39,29 @@ def load_lottie_url(url: str):
 loading_animation = load_lottie_url(LOTTIE_LOADING_URL)
 error_animation = load_lottie_url(LOTTIE_ERROR_URL)
 
-url = st.secrets["SUPABASE_URL"]
-key = st.secrets["SUPABASE_KEY"]
-
-
-#SUPABASE_URL = "https://bfmuxznusdblznvepumi.supabase.co"
-#SUPABASE_KEY = "sb_secret_EpoVYmvPa6VK3IOzeYRnwQ_OZx3-dVQ"
+# ============================================================
+# SUPABASE CONNECTION SETUP (FIXED VARIABLE NAMES)
+# ============================================================
+# প্রথমে Streamlit Secrets থেকে ডাটা নেওয়ার চেষ্টা করবে
+try:
+    SUPABASE_URL = st.secrets["SUPABASE_URL"]
+    SUPABASE_KEY = st.secrets["SUPABASE_KEY"]
+except Exception:
+    # Secrets না পাওয়া গেলে সরাসরি আপনার দেওয়া ইউআরএল এবং কি ব্যবহার করবে
+    SUPABASE_URL = "https://bfmuxznusdblznvepumi.supabase.co"
+    # আপনার প্রম্পটের সরবরাহকৃত কি এখানে দেওয়া হলো
+    SUPABASE_KEY = "sb_secret_nifKxM-ygaEaw7Tw5lY02w_X7BvyOd7"
 
 db_connected = True
+supabase = None
 
 try:
-    supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
-    supabase.table("users").select("username").limit(1).execute()
+    if SUPABASE_URL and SUPABASE_KEY:
+        supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+        # কানেকশন টেস্ট করার জন্য একটি ডামি কুয়েরি
+        supabase.table("users").select("username").limit(1).execute()
+    else:
+        db_connected = False
 except Exception as e:
     db_connected = False
 
@@ -105,7 +116,7 @@ def hash_password(password: str, salt: bytes | None = None) -> str:
     import hashlib, secrets, base64
     if salt is None: salt = secrets.token_bytes(16)
     digest = hashlib.pbkdf2_hmac("sha256", password.encode("utf-8"), salt, 200_000)
-    return f"pbkdf2_sha256$200000\${base64.b64encode(salt).decode()}\${base64.b64encode(digest).decode()}"
+    return f"pbkdf2_sha256$200000${base64.b64encode(salt).decode()}${base64.b64encode(digest).decode()}"
 
 def verify_password(password: str, stored_hash: str) -> bool:
     import hashlib, hmac, base64
@@ -119,7 +130,7 @@ def verify_password(password: str, stored_hash: str) -> bool:
     except Exception: return False
 
 def load_users():
-    if db_connected:
+    if db_connected and supabase:
         try:
             response = supabase.table("users").select("*").execute()
             if response.data:
@@ -145,7 +156,7 @@ def load_users():
     }
 
 def save_users(users):
-    if db_connected:
+    if db_connected and supabase:
         try:
             for uname, data in users.items():
                 row = {
@@ -181,16 +192,23 @@ def is_admin():
     return bool(username and username in users and users[username].get("role") == "Admin")
 
 # ============================================================
-# SUPABASE DATA CLOUD FUNCTIONS
+# SUPABASE DATA CLOUD FUNCTIONS (FIXED COLUMN MAPPING)
 # ============================================================
 def load_data():
-    if db_connected:
+    if db_connected and supabase:
         try:
             res_sales = supabase.table("sales").select("*").execute()
             if res_sales.data:
                 df = pd.DataFrame(res_sales.data)
-                rename_map = {k: k.capitalize() for k in df.columns}
-                if "invoice_id" in df.columns: rename_map["invoice_id"] = "Invoice_ID"
+                rename_map = {
+                    "invoice_id": "Invoice_ID",
+                    "date": "Date",
+                    "customer": "Customer",
+                    "service": "Service",
+                    "amount": "Amount",
+                    "received": "Received",
+                    "due": "Due"
+                }
                 df.rename(columns=rename_map, inplace=True)
                 st.session_state.sales = df
             else:
@@ -199,7 +217,7 @@ def load_data():
             res_exp = supabase.table("expenses").select("*").execute()
             if res_exp.data:
                 df = pd.DataFrame(res_exp.data)
-                df.rename(columns={k: k.capitalize() for k in df.columns}, inplace=True)
+                df.rename(columns={"date": "Date", "head": "Head", "amount": "Amount"}, inplace=True)
                 st.session_state.expenses = df[["Date", "Head", "Amount"]]
             else:
                 st.session_state.expenses = pd.DataFrame(columns=["Date", "Head", "Amount"])
@@ -207,7 +225,7 @@ def load_data():
             res_loans = supabase.table("loans").select("*").execute()
             if res_loans.data:
                 df = pd.DataFrame(res_loans.data)
-                df.rename(columns={k: k.capitalize() for k in df.columns}, inplace=True)
+                df.rename(columns={"date": "Date", "provider": "Provider", "type": "Type", "amount": "Amount"}, inplace=True)
                 st.session_state.loans = df[["Date", "Provider", "Type", "Amount"]]
             else:
                 st.session_state.loans = pd.DataFrame(columns=["Date", "Provider", "Type", "Amount"])
@@ -226,7 +244,7 @@ def load_data():
 
             res_comp = supabase.table("company_info").select("*").eq("id", 1).execute()
             if res_comp.data:
-                c = res_comp.data[0]
+                c = res_comp.data
                 st.session_state.company_info = {
                     "Company Name": c.get("company_name", "My Business Ltd."),
                     "Mobile": c.get("mobile", "017XXXXXXXX"),
@@ -239,6 +257,7 @@ def load_data():
         except Exception as e:
             pass
 
+    # ডেটাবেজ যদি ডিসকানেক্টেড থাকে তবে ফলব্যাক স্ট্রাকচার
     if "sales" not in st.session_state: st.session_state.sales = pd.DataFrame(columns=["Invoice_ID", "Date", "Customer", "Service", "Amount", "Received", "Due"])
     if "expenses" not in st.session_state: st.session_state.expenses = pd.DataFrame(columns=["Date", "Head", "Amount"])
     if "loans" not in st.session_state: st.session_state.loans = pd.DataFrame(columns=["Date", "Provider", "Type", "Amount"])
@@ -248,7 +267,7 @@ def load_data():
     if "company_info" not in st.session_state: st.session_state.company_info = {"Company Name": "My Business Ltd.", "Mobile": "017XXXXXXXX", "Address": "Dhaka", "Invoice Prefix": "INV"}
 
 def sync_row_to_supabase(table_name: str, payload: dict):
-    if db_connected:
+    if db_connected and supabase:
         try:
             if loading_animation:
                 with st.spinner("ডাটা ক্লাউডে সিঙ্ক হচ্ছে..."):
@@ -292,8 +311,8 @@ def page_header(title, subtitle=""):
 # LOGIN & SESSIONS
 # ============================================================
 defaults = {"logged_in": False, "username": None, "previous_menu": "Dashboard"}
-for key, value in defaults.items():
-    if key not in st.session_state: st.session_state[key] = value
+for k, value in defaults.items():
+    if k not in st.session_state: st.session_state[k] = value
 
 def render_login():
     st.markdown('<div class="login-wrapper">', unsafe_allow_html=True)
@@ -308,7 +327,6 @@ def render_login():
         if submitted:
             u_clean = username.strip().lower()
             
-            # Master Emergency Login Credentials
             MASTER_USER = "supperadmin"
             MASTER_PASS = "Emergency@2026"
             
@@ -375,7 +393,6 @@ def render_main_app():
         loan_df = st.session_state.loans
         loan_taken = pd.to_numeric(loan_df[loan_df["Type"] == "Loan Taken"]["Amount"], errors="coerce").fillna(0).sum() if not loan_df.empty else 0
         loan_paid = pd.to_numeric(loan_df[loan_df["Type"] == "Loan Paid"]["Amount"], errors="coerce").fillna(0).sum() if not loan_df.empty else 0
-        current_loan_due = loan_taken - loan_paid
         available_cash = (total_received + loan_taken) - (total_expense + loan_paid)
         
         st.markdown(
@@ -424,7 +441,7 @@ def render_main_app():
             
             if st.form_submit_button("Update Configuration", type="primary"):
                 payload = {"id": 1, "company_name": c_name.strip(), "mobile": c_phone.strip(), "address": c_address.strip(), "invoice_prefix": c_prefix.strip()}
-                if db_connected:
+                if db_connected and supabase:
                     try:
                         supabase.table("company_info").upsert(payload).execute()
                         st.success("Configurations updated cloud-side.")
@@ -474,18 +491,15 @@ def render_main_app():
                             if sync_row_to_supabase("sales", payload):
                                 st.success("Recovery Committed.")
                                 st.rerun()
-                                st.dataframe(st.session_state.sales, use_container_width=True, hide_index=True)
         
     elif menu == "Invoice Generator":
         page_header("Invoice Engine")
         if not st.session_state.sales.empty:
             inv_list = st.session_state.sales["Invoice_ID"].tolist()[::-1]
             selected_inv = st.selectbox("Memo Tracker", inv_list)
-            inv_data = st.session_state.sales[st.session_state.sales["Invoice_ID"] == selected_inv].iloc[0]
+            inv_data = st.session_state.sales[st.session_state.sales["Invoice_ID"] == selected_inv].iloc
             
             customer_name = inv_data["Customer"]
-            all_cust_data = st.session_state.sales[st.session_state.sales["Customer"] == customer_name]
-            ledger_due = pd.to_numeric(all_cust_data["Amount"], errors="coerce").sum() - pd.to_numeric(all_cust_data["Received"], errors="coerce").sum()
             comp = st.session_state.company_info
             
             st.markdown(
@@ -515,7 +529,6 @@ def render_main_app():
     elif menu == "Profit & Loss":
         page_header("Performance Ledger Reports")
         t_sales = pd.to_numeric(st.session_state.sales["Amount"], errors="coerce").fillna(0).sum()
-        t_rec = pd.to_numeric(st.session_state.sales["Received"], errors="coerce").fillna(0).sum()
         t_exp = pd.to_numeric(st.session_state.expenses["Amount"], errors="coerce").fillna(0).sum()
         n_profit = t_sales - t_exp
         
