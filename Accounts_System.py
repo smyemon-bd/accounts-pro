@@ -195,7 +195,7 @@ def load_data():
         st.session_state.expenses = pd.DataFrame(columns=["Date", "Head", "Amount"])
 
 
-            res_comp = supabase.table("company_info").select("*").eq("id", 1).execute()
+            #res_comp = supabase.table("company_info").select("*").eq("id", 1).execute()
             if res_comp.data:
                 c = res_comp.data
                 st.session_state.company_info = {
