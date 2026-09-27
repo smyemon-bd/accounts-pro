@@ -196,19 +196,19 @@ def load_data():
 
 
             #res_comp = supabase.table("company_info").select("*").eq("id", 1).execute()
-            if res_comp.data:
-                c = res_comp.data
-                st.session_state.company_info = {
-                    "Company Name": c.get("company_name", "My Business Ltd."),
-                    "Mobile": c.get("mobile", "017XXXXXXXX"),
-                    "Address": c.get("address", "Dhaka, Bangladesh"),
-                    "Invoice Prefix": c.get("invoice_prefix", "INV")
-                }
-            else:
-                st.session_state.company_info = {"Company Name": "My Business Ltd.", "Mobile": "017XXXXXXXX", "Address": "Dhaka, Bangladesh", "Invoice Prefix": "INV"}
-            return
-        except Exception as e:
-            pass
+            # if res_comp.data:
+                # c = res_comp.data
+                # st.session_state.company_info = {
+                    # "Company Name": c.get("company_name", "My Business Ltd."),
+                    # "Mobile": c.get("mobile", "017XXXXXXXX"),
+                    # "Address": c.get("address", "Dhaka, Bangladesh"),
+                    # "Invoice Prefix": c.get("invoice_prefix", "INV")
+                # }
+            # else:
+                # st.session_state.company_info = {"Company Name": "My Business Ltd.", "Mobile": "017XXXXXXXX", "Address": "Dhaka, Bangladesh", "Invoice Prefix": "INV"}
+            # return
+        # except Exception as e:
+            # pass
 
     # ডেটাবেজ যদি ডিসকানেক্টেড থাকে তবে ফলব্যাক স্ট্রাকচার
     if "sales" not in st.session_state: st.session_state.sales = pd.DataFrame(columns=["Invoice_ID", "Date", "Customer", "Service", "Amount", "Received", "Due"])
