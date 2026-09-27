@@ -6,61 +6,14 @@ import requests
 from supabase import create_client, Client
 from streamlit_lottie import st_lottie
 
-# ============================================================
-# PAGE CONFIG & INITIALIZATION
-# ============================================================
-st.set_page_config(
-    page_title="Accounts Pro | Finance Management",
-    page_icon="💼",
-    layout="wide",
-    initial_sidebar_state="auto",
-)
+st.set_page_config(page_title="Accounts Pro", page_icon="💼", layout="wide")
 
-# ------------------------------------------------------------
-# GITHUB RAW PATHS FOR LOTTIE ANIMATIONS
-# ------------------------------------------------------------
-GITHUB_USER = "smyemon-bd"
-GITHUB_REPO = "accounts-pro"
-GITHUB_BRANCH = "main"
-
-LOTTIE_LOADING_URL = f"https://raw.githubusercontent.com/{GITHUB_USER}/{GITHUB_REPO}/{GITHUB_BRANCH}/Loading%20Lottie%20animation.json"
-LOTTIE_ERROR_URL = f"https://raw.githubusercontent.com/{GITHUB_USER}/{GITHUB_REPO}/{GITHUB_BRANCH}/404%20error%20page%20with%20cat.json"
-
-@st.cache_data(show_spinner=False)
-def load_lottie_url(url: str):
-    try:
-        r = requests.get(url, timeout=5)
-        if r.status_code == 200:
-            return r.json()
-    except Exception:
-        return None
-    return None
-
-loading_animation = load_lottie_url(LOTTIE_LOADING_URL)
-error_animation = load_lottie_url(LOTTIE_ERROR_URL)
-
-# ============================================================
-# SUPABASE CONNECTION SETUP (FIXED VARIABLE NAMES)
-# ============================================================
-# প্রথমে Streamlit Secrets থেকে ডাটা নেওয়ার চেষ্টা করবে
+# ক্র্যাশ ও ভেরিয়েবল নেমিং সমস্যা ফিক্সড লজিক
 try:
     SUPABASE_URL = st.secrets["SUPABASE_URL"]
     SUPABASE_KEY = st.secrets["SUPABASE_KEY"]
 except Exception:
-    # Secrets না পাওয়া গেলে সরাসরি আপনার দেওয়া ইউআরএল এবং কি ব্যবহার করবে
     SUPABASE_URL = "https://bfmuxznusdblznvepumi.supabase.co"
-    # আপনার প্রম্পটের সরবরাহকৃত কি এখানে দেওয়া হলো
-    SUPABASE_KEY = "sb_secret_nifKxM-ygaEaw7Tw5lY02w_X7BvyOd7"
-
-db_connected = True
-supabase = None
-
-try:
-    SUPABASE_URL = st.secrets["SUPABASE_URL"]
-    SUPABASE_KEY = st.secrets["SUPABASE_KEY"]
-except Exception:
-    # ফলব্যাক: সিক্রেটস না থাকলে সরাসরি ইনপুট নেবে
-    SUPABASE_URL = "https://supabase.co"
     SUPABASE_KEY = "sb_secret_nifKxM-ygaEaw7Tw5lY02w_X7BvyOd7"
 
 db_connected = True
@@ -68,28 +21,16 @@ supabase = None
 
 try:
     if SUPABASE_URL and SUPABASE_KEY:
-        supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
-        
-        # টেবিল চেক না করে শুধু API এন্ডপয়েন্ট সচল কি না তা পরীক্ষা করা হচ্ছে
+        supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
         headers = {"apikey": SUPABASE_KEY, "Authorization": f"Bearer {SUPABASE_KEY}"}
         response = requests.get(f"{SUPABASE_URL}/rest/v1/", headers=headers, timeout=5)
-        if response.status_code not in:
+        if response.status_code != 200:
             db_connected = False
     else:
         db_connected = False
-except Exception as e:
+except Exception:
     db_connected = False
 
-
-#try:
-    #if SUPABASE_URL and SUPABASE_KEY:
-        #supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
-        # কানেকশন টেস্ট করার জন্য একটি ডামি কুয়েরি
-        #supabase.table("users").select("username").limit(1).execute()        
-    #else:
-        #db_connected = False
-#except Exception as e:
-    #db_connected = False
 
 APP_NAME = "Accounts Pro"
 APP_SUBTITLE = "Finance Management System"
