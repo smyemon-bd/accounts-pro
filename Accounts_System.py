@@ -162,68 +162,38 @@ def is_admin():
 # SUPABASE DATA CLOUD FUNCTIONS (FIXED COLUMN MAPPING)
 # ============================================================
 def load_data():
-    if db_connected and supabase:
-        try:
-            res_sales = supabase.table("sales").select("*").execute()
-            if res_sales.data:
-                df = pd.DataFrame(res_sales.data)
-                # প্রজেক্টের রিকোয়ারমেন্ট অনুযায়ী সুনির্দিষ্ট ম্যাপিং করা হয়েছে
-                rename_map = {
-                "invoice_id": "Invoice_ID",
-                "date": "Date",
-                "customer": "Customer",
-                "service": "Service",
-                "amount": "Amount",
-                "received": "Received",
-                "due": "Due"
-    }
-    # df.rename(columns=rename_map, inplace=True)
-    # st.session_state.sales = df
+    if not (db_connected and supabase):
+        # ফলব্যাক এম্পটি স্ট্রাকচার
+        for t in ['sales', 'expenses', 'loans']:
+            if t not in st.session_state: st.session_state[t] = pd.DataFrame()
+        return
 
-            # res_sales = supabase.table("sales").select("*").execute()
-            # if res_sales.data:
-                # df = pd.DataFrame(res_sales.data)
-                # rename_map = {
-                    # "invoice_id": "Invoice_ID",
-                    # "date": "Date",
-                    # "customer": "Customer",
-                    # "service": "Service",
-                    # "amount": "Amount",
-                    # "received": "Received",
-                    # "due": "Due"
-                # }
-                # df.rename(columns=rename_map, inplace=True)
-                # st.session_state.sales = df
-            else:
-                st.session_state.sales = pd.DataFrame(columns=["Invoice_ID", "Date", "Customer", "Service", "Amount", "Received", "Due"])
+    # Sales টেবিল ও কলাম ম্যাপিং ফিক্স
+    try:
+        res_sales = supabase.table("sales").select("*").execute()
+        if res_sales.data:
+            df = pd.DataFrame(res_sales.data)
+            rename_map = {"invoice_id": "Invoice_ID", "date": "Date", "customer": "Customer", "service": "Service", "amount": "Amount", "received": "Received", "due": "Due"}
+            df.rename(columns=rename_map, inplace=True)
+            st.session_state.sales = df
+        else:
+            st.session_state.sales = pd.DataFrame(columns=["Invoice_ID", "Date", "Customer", "Service", "Amount", "Received", "Due"])
+    except Exception as e:
+        st.error(f"Sales Table Error: {e}")
+        st.session_state.sales = pd.DataFrame(columns=["Invoice_ID", "Date", "Customer", "Service", "Amount", "Received", "Due"])
 
-            res_exp = supabase.table("expenses").select("*").execute()
-            if res_exp.data:
-                df = pd.DataFrame(res_exp.data)
-                df.rename(columns={"date": "Date", "head": "Head", "amount": "Amount"}, inplace=True)
-                st.session_state.expenses = df[["Date", "Head", "Amount"]]
-            else:
-                st.session_state.expenses = pd.DataFrame(columns=["Date", "Head", "Amount"])
+    # Expenses টেবিল ফিক্স
+    try:
+        res_exp = supabase.table("expenses").select("*").execute()
+        if res_exp.data:
+            df = pd.DataFrame(res_exp.data)
+            df.rename(columns={"date": "Date", "head": "Head", "amount": "Amount"}, inplace=True)
+            st.session_state.expenses = df[["Date", "Head", "Amount"]]
+        else:
+            st.session_state.expenses = pd.DataFrame(columns=["Date", "Head", "Amount"])
+    except Exception:
+        st.session_state.expenses = pd.DataFrame(columns=["Date", "Head", "Amount"])
 
-            res_loans = supabase.table("loans").select("*").execute()
-            if res_loans.data:
-                df = pd.DataFrame(res_loans.data)
-                df.rename(columns={"date": "Date", "provider": "Provider", "type": "Type", "amount": "Amount"}, inplace=True)
-                st.session_state.loans = df[["Date", "Provider", "Type", "Amount"]]
-            else:
-                st.session_state.loans = pd.DataFrame(columns=["Date", "Provider", "Type", "Amount"])
-
-            res_serv = supabase.table("services").select("service_name").execute()
-            if res_serv.data: st.session_state.services = pd.DataFrame(res_serv.data).rename(columns={"service_name": "Service Name"})
-            else: st.session_state.services = pd.DataFrame({"Service Name": ["Computer & Hardware", "Barcode Paper & Ribbon", "Printer", "CC Camera"]})
-
-            res_cust = supabase.table("customers").select("customer_name").execute()
-            if res_cust.data: st.session_state.customers = pd.DataFrame(res_cust.data).rename(columns={"customer_name": "Customer Name"})
-            else: st.session_state.customers = pd.DataFrame({"Customer Name": ["Default Customer"]})
-
-            res_heads = supabase.table("expense_heads").select("head_name").execute()
-            if res_heads.data: st.session_state.expense_heads = pd.DataFrame(res_heads.data).rename(columns={"head_name": "Head Name"})
-            else: st.session_state.expense_heads = pd.DataFrame({"Head Name": ["Office Rent", "Utility Bill", "Salary", "Marketing", "Other"]})
 
             res_comp = supabase.table("company_info").select("*").eq("id", 1).execute()
             if res_comp.data:
